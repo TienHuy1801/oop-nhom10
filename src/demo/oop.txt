@@ -1,0 +1,15 @@
+* Giao diện
+Chuyển cột tính năng sang bên phải => đồ thị vào giữa
+Bỏ Mảng 2 chiều đi hoặc có nút tắt mở 
+	Ma trận 2 chiều -> thêm cột STT dọc
+Nên bỏ 3 nút (move point, draw point, draw line) => đưa vào chế độ auto
+* Tính năng
+Thêm cách biểu diễn đồ thị cho người dùng chọn
+Trọng số âm
+BFS hoặc DFS => để biết từ 1 điểm có thể đi đến những điểm nào
+* Algorithms
+update chỉ nên reset đồ thị, k nên reset điểm đầu, điểm cuối
+Phần điểm đầu và điểm cuối nên chỉnh sửa được
+* Help
+Khi click doub left-mouse sẽ tự tạo điểm
+press and drag left-mouse sẽ di chuyển điểm

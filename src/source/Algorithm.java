@@ -1,37 +1,36 @@
 package source;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class MyTry{ 
+public class Algorithm{ 
 	private int size;
-	private int beginPoint, endPoint;
+	private int beginPoint;
 	private int a[][];
+	private int dad[];
+    private int maxsize;
+	private int count[];
 	private ArrayList<int[]> result = new ArrayList<int[]>();
 	private int[] trace;
-	private boolean[] visited;
 	private ArrayList<MyPoint> arrMyPoint = new ArrayList<MyPoint>();
 	private ArrayList<MyLine> arrMyLine = new ArrayList<MyLine>();
 	private boolean mapType = false;
 	
-	private int count;
-	
-	public MyTry() {
+	public Algorithm() {
 	}
 	
 	public void input() {
-		count = 0;
-		result.clear();
+		maxsize = 0;
 		size = arrMyPoint.size();
+		dad = new int[size];
+		count = new int[size];
 		a = new int[size][size];
 		trace = new int[size];
-    	visited = new boolean[size];
     	size--;
     	for(int i = 1; i <= size; i++) {
-    		visited[i] = false;
+    		trace[i] = 0;
     	}
-    	
-    	trace[0] = beginPoint;
-    	visited[beginPoint] = true;
 
 		for (int i = 1; i < arrMyLine.size(); i++) {
 			a[arrMyLine.get(i).getIndexPointA()][arrMyLine.get(i).getIndexPointB()] = arrMyLine.get(i).getCost();
@@ -40,37 +39,50 @@ public class MyTry{
 			}
 		}
 	}
-	
-	public void Sol(int line) {
-		count++;
-		int arr[] = new int[line];
-		for (int i = 0; i < line; i++) {
-    		arr[i] = trace[i];
-    	}
-		result.add(arr);
-	}
     
-    public void BT(int line){
-        if (trace[line - 1] == endPoint) {
-        	Sol(line);
-        } else {
-        	for(int i = 1; i <= size; i++) {
-        		if (a[trace[line - 1]][i] != 0){
-	              if (!visited[i]){ 
-	                  visited[i] = true;
-	                  trace[line] = i;
-	                  BT(line + 1);
-	                  trace[line] = 0;
-	                  visited[i] = false;
-	              }
+    public void DFS() {
+    	
+    }
+    
+    public void BFS() {
+        Queue<Integer> queue = new LinkedList<>();
+        queue.clear();
+        queue.offer(beginPoint);
+        trace[beginPoint] = 1;
+        count[1] = 1;
+        while(!queue.isEmpty()) {
+        	int u = queue.poll();
+        	for (int i = 1; i <= size; i++) {
+        		if (a[u][i] != 0) {
+        			if (trace[i] == 0) {
+        				dad[i] = u;
+        				trace[i] = trace[u] + 1;
+        				count[trace[i]]++;
+        				maxsize = Math.max(maxsize, trace[i]);
+        				queue.offer(i);
+        			}
         		}
         	}
         }
+        result.clear();
+        int i = 1;
+        while (i <= maxsize) {
+        	int arr[] = new int[count[i]];
+        	int d = 0;
+        	for (int j = 1; j <= size; j++) {
+        		if (trace[j] == i) {
+        			arr[d] = j;
+        			d++;
+        		}
+        	}
+        	result.add(arr);
+        	i++;
+        }
     }
     
-    public String countPath() {
-    	if (count > 1) return "There are " + Integer.toString(count) + " paths";
-    	else return "There is " + Integer.toString(count) + " path";
+    public String countStep() {
+    	if (maxsize > 1) return "There are " + Integer.toString(maxsize) + " paths";
+    	else return "There is " + Integer.toString(maxsize) + " path";
     }
 
 	public int getBeginPoint() {
@@ -79,14 +91,6 @@ public class MyTry{
 
 	public void setBeginPoint(int beginPoint) {
 		this.beginPoint = beginPoint;
-	}
-
-	public int getEndPoint() {
-		return endPoint;
-	}
-
-	public void setEndPoint(int endPoint) {
-		this.endPoint = endPoint;
 	}
 
 	public int[][] getA() {
@@ -133,12 +137,19 @@ public class MyTry{
 		this.size = size;
 	}
 
-	public int getCount() {
-		return count;
+	public int getMaxsize() {
+		return maxsize;
 	}
 
-	public void setCount(int count) {
-		this.count = count;
+	public void setMaxsize(int maxsize) {
+		this.maxsize = maxsize;
 	}
-	
+
+	public int[] getDad() {
+		return dad;
+	}
+
+	public void setDad(int[] dad) {
+		this.dad = dad;
+	}		
 }

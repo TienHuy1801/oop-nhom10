@@ -28,12 +28,12 @@ public class MyDijkstra {
 	public void input() {
 		infinity = 1;
 		size = arrMyPoint.size();
-		a = new int[size][size];
-		len = new int[size];
-		p = new int[size];
+		a = new int[size][size];//mảng lưu cost giữa 2 đỉnh
+		len = new int[size];//mảng lưu cost nhỏ nhất từ đỉnh đầu mình nhập tới đỉnh đang xét
+		p = new int[size];//mảng truy vết
 		checkedPointMin = new boolean[size];
 
-		for (int i = 1; i < arrMyLine.size(); i++) {
+		for (int i = 1; i < arrMyLine.size(); i++) {//nhập cost giữa 2 đỉnh
 			a[arrMyLine.get(i).getIndexPointA()][arrMyLine.get(i)
 					.getIndexPointB()] = arrMyLine.get(i).getCost();
 			if (!mapType) {
@@ -47,60 +47,48 @@ public class MyDijkstra {
 	public void processInput() {
 		for (int i = 1; i < size; i++) {
 			for (int j = 1; j < size; j++) {
-				if (a[i][j] == 0 && i != j) {
+				if (a[i][j] == 0 && i != j) {//trên ma trận, nếu không có đường từ i tới j và i khác j thì cost = vô cực
 					a[i][j] = infinity;
 				}
 			}
 		}
 	}
 
-	public String outputMatrix() {
-		// System.out.printf(mapType + "\n");
-		for (int i = 1; i < size; i++) {
-			for (int j = 1; j < size; j++) {
-				if (a[i][j] == infinity) {
-					System.out.printf("%5s", "∞");
-				} else {
-					System.out.printf("%5d", a[i][j]);
-				}
-			}
-		}
-		return "";
-	}
-
-	private void initValue() {
+	private void initValue() {//hàm khởi tạo
 		logLen = new int[size][size];
 		logP = new int[size][size];
 		// processInput();
 		for (int i = 1; i < size; i++) {
-			len[i] = infinity;
-			checkedPointMin[i] = false;
-			p[i] = 0;
+			len[i] = infinity;//khởi tạo cho tất cả giá trị len là vô cực
+			checkedPointMin[i] = false;//tất cả các điểm đều chưa xét
+			p[i] = 0;//điểm bắt đầu của mỗi điểm là điểm mặc định
 		}
 		logLen[0] = len;
 		logP[0] = p;
-		len[beginPoint] = 0;
+		len[beginPoint] = 0;//k/c từ điểm đầu tới điểm đầu bằng 0
 	}
 
 	public int dijkstra() {
 		initValue();
-		int i = 1, k = 0;
+		int i = 1, k = 0;//k: số điểm đã xét
 		// for (int k = 1; k < size; k++) {
 		while (checkContinue(k)) {
 			for (i = 1; i < size; i++)
-				if (!checkedPointMin[i] && len[i] < infinity)
+				if (!checkedPointMin[i] && len[i] < infinity)//tìm điểm i mà chưa xét và có len[i] không phải vô cùng
 					break;
-			if (i >= size)
+			
+			if (i >= size)//nếu duyệt hết các đỉnh mà không thấy đỉnh k thì thoát
 				break;
-			for (int j = 1; j < size; j++)
+			
+			for (int j = 1; j < size; j++)//tìm điểm có cost min là gán cho i
 				if (!checkedPointMin[j] && len[i] > len[j])
 					i = j;
 
-			checkedPointMin[i] = true;
-			for (int j = 1; j < size; j++) {
+			checkedPointMin[i] = true;//gán đỉnh i là đã xét
+			for (int j = 1; j < size; j++) {//cập nhật lại cost của các len[] nếu nhỏ hơn trước đó
 				if (!checkedPointMin[j] && len[i] + a[i][j] < len[j]) {
 					len[j] = len[i] + a[i][j];
-					p[j] = i;
+					p[j] = i;//lưu đỉnh trước đỉnh j là đỉnh i
 
 				}
 				logLen[k][j] = len[j];
@@ -109,16 +97,16 @@ public class MyDijkstra {
 			k++;
 		}
 		if (endPoint == -1) { // endPoint = -1 -> beginPoint to all Point
-			numberPointChecked = arrMyPoint.size();
+			numberPointChecked = arrMyPoint.size();//nếu endpoint bằng -1 thì đã xét toàn bộ điểm, trả về 0
 			return 0;
 		}
-		numberPointChecked = k;
-		return len[endPoint];
+		numberPointChecked = k;// endpoint != -1 thì số điểm đã xét bằng k
+		return len[endPoint];//trả về khoảng cách từ first tới endpoint
 	}
 
-	public int dijkstraStep(int step) {
+	public int dijkstraStep(int step) {//tương tự hàm dijkstra nhưng để thêm i vào PointResult
 		initValue();
-		int i = 0, k = 0;
+		int i = 1, k = 0;
 		arrPointResultStep = new ArrayList<Integer>();
 		// while (!checkPointMin[end] && k < step) {
 		while (checkContinueStep(step, k)) {
@@ -153,23 +141,23 @@ public class MyDijkstra {
 		return len[endPoint];
 	}
 
-	private boolean checkContinueStep(int step, int k) {
+	private boolean checkContinueStep(int step, int k) {//kiểm tra xem endpoint được xét chưa và k < step
 		if (endPoint != -1) {
 			return (!checkedPointMin[endPoint] && k < step);
 		}
 		return (k < arrMyPoint.size() - 1 && k < step);
 	}
 
-	private boolean checkContinue(int k) {
+	private boolean checkContinue(int k) {//kiểm tra xem đã xét tới điểm endpoint chưa
 		if (endPoint != -1) {
 			return (!checkedPointMin[endPoint]);
 		}
 		return (k < arrMyPoint.size() - 1);
 	}
 
-	public String tracePath() {
+	public String tracePath() {//dùng cho RUN ALL
 		path = "";
-		if (endPoint > 0 && len[endPoint] < infinity) {
+		if (endPoint > 0 && len[endPoint] < infinity) {//nếu tìm được len[endpoint] rồi thì in
 			int i = endPoint;
 			while (i != beginPoint) {
 				path = " --> " + i + path;
@@ -177,31 +165,14 @@ public class MyDijkstra {
 			}
 			path = "The cost from " + beginPoint + " to " + endPoint + " is "
 					+ len[endPoint] + "\t" + "Path : " + i + path;
-		} else if (endPoint == -1) {
-			for (int i = arrMyPoint.size() - 1; i >= 1; i--) {
-				int j = i;
-				if (len[i] < infinity) {
-					while (j != beginPoint) {
-						path = " --> " + j + path;
-						j = p[j];
-					}
-					path = "The cost from " + beginPoint + " to " + i + " is "
-							+ len[i] + "\t" + "Path : " + j + path;
-
-				} else {
-					path = "Can't go from " + beginPoint + " to " + i + path;
-				}
-				if (i > 1) {
-					path = "\n" + path;
-				}
-			}
-		} else {
+		}
+		else {//nếu không có đường từ điểm đầu tới điểm cuối thì in ra
 			path = "Can't go from " + beginPoint + " to " + endPoint;
 		}
 		return path;
 	}
 
-	public String tracePathStep() {
+	public String tracePathStep() {//dùng cho RUN STEP
 		path = "";
 		if (endPoint > 0) {
 			int i = arrPointResultStep.get(arrPointResultStep.size() - 1);
@@ -213,7 +184,7 @@ public class MyDijkstra {
 			path = "The cost from " + beginPoint + " to " + i + " is " + len[i]
 					+ "\t" + "Path : " + j + path;
 
-			if (stop) {
+			if (stop) {//nếu i > size thì stop == true và suy ra không có đường cần tìm
 				path = "Can't go from " + beginPoint + " to " + endPoint;
 			}
 		} else if (endPoint == -1) {
@@ -229,9 +200,6 @@ public class MyDijkstra {
 
 				if (stop) {
 					path = "Can't go from " + beginPoint + " to " + endPoint;
-				}
-				if (i > 0) {
-					path = "\n" + path;
 				}
 			}
 

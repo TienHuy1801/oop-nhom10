@@ -3,19 +3,26 @@ package source;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Event;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
-import java.util.InputMismatchException;
+import java.util.ArrayList;
 import java.util.Random;
-import java.util.Scanner;
 
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
@@ -25,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -55,24 +63,29 @@ public class MyFrame extends JFrame implements ActionListener {
 	private JComboBox<String> cbbGraphDemo = new JComboBox<String>();
 
 	private JRadioButton radUndirected, radDirected;
-	private JButton btnRunAll, btnRunStep, btnRandom, btnRunTry, btnNext, btnPrev;
+	private JButton btnRunAll, btnRandom, btnRunTry, btnNext, btnPrev;
 
 	private JTable tableMatrix;
 	private JTable tableLog;
 
 	// draw
 	private JPanel drawPanel = new JPanel();
-	private JButton btnPoint, btnLine, btnUpdate, btnMove, btnOpen, btnSave, btnNew;
+	private JButton btnPoint, btnLine, btnUpdate, btnMove, btnOpen, btnSave, btnNew, btnDfs, btnBfs;
 	// graph
 	private MyDraw myDraw = new MyDraw();
 
 	// log
 	private JTextArea textLog;
-	private JTextArea textMatrix;
+//	private JTextArea textMatrix;
 
 	private JTextField textNumerPoint;
 
 	private MyPopupMenu popupMenu;
+	
+	//algo
+	private int maxsize;
+	private int index;
+	private ArrayList<Integer> updateTrace;
 
 	private int indexBeginPoint = 0, indexEndPoint = 0;
 	private int step = 0;
@@ -82,6 +95,7 @@ public class MyFrame extends JFrame implements ActionListener {
 
 	MyDijkstra dijkstra = new MyDijkstra();
 	MyTry Try = new MyTry();
+	Algorithm algo = new Algorithm();
 
 	public MyFrame(String title) {
 		setTitle(title);
@@ -181,21 +195,30 @@ public class MyFrame extends JFrame implements ActionListener {
 		JPanel panelNextPrevBox = new JPanel(new BorderLayout());
 		panelNextPrevBox.setBorder(new TitledBorder("Select path"));
 		panelNextPrevBox.add(panelNextPrev);
-
-		JPanel panelRunTemp = new JPanel(new GridLayout(1, 2, 15, 5));
-		panelRunTemp.setBorder(new EmptyBorder(0, 15, 0, 5));
-		panelRunTemp.add(btnRunAll = createButton("Run All"));
-		panelRunTemp.add(btnRunStep = createButton("Run Step"));
-		JPanel panelRun = new JPanel(new BorderLayout());
-		panelRun.setBorder(new TitledBorder("Dijkstra"));
-		panelRun.add(panelRunTemp);
+		
+		JPanel panelAlgo = new JPanel(new GridLayout(1,2,5,5));
+		panelAlgo.setBorder(new EmptyBorder(0, 0, 0, 0));
+//		panelAlgo.add(btnDfs = createButton("DFS"));
+		panelAlgo.add(btnBfs = createButton("BFS"));
+		panelAlgo.add(btnRunAll = createButton("Dijkstra"));
+		JPanel panelAlgorithm = new JPanel(new BorderLayout());
+		panelAlgorithm.setBorder(new TitledBorder("Algorithm"));
+		panelAlgorithm.add(panelAlgo);
+//
+//		JPanel panelRunTemp = new JPanel(new GridLayout(1, 2, 15, 5));
+//		panelRunTemp.setBorder(new EmptyBorder(0, 15, 0, 5));
+//		panelRunTemp.add(btnRunStep = createButton("Run Step"));
+//		JPanel panelRun = new JPanel(new BorderLayout());
+//		panelRun.setBorder(new TitledBorder("Dijkstra"));
+//		panelRun.add(panelRunTemp);
 
 		panelTop.add(panelMapType);
 		panelTop.add(panelInputMethod);
 		panelTop.add(panelSelectPoint);
 		panelTop.add(panelRunT);
 		panelTop.add(panelNextPrevBox);
-		panelTop.add(panelRun);
+		panelTop.add(panelAlgorithm);
+//		panelTop.add(panelRun);
 
 		JScrollPane scroll = new JScrollPane(tableMatrix = createTable());
 		scroll.setPreferredSize(panelTop.getPreferredSize());
@@ -373,6 +396,7 @@ public class MyFrame extends JFrame implements ActionListener {
 		updateListPath();
 		resetDataDijkstra();
 		setDrawResultOrStep(false);
+		myDraw.setDrawTry(false);
 		reDraw();
 		loadMatrix();
 		clearLog();
@@ -381,20 +405,23 @@ public class MyFrame extends JFrame implements ActionListener {
 	private void actionDrawPoint() {
 		myDraw.setDraw(1);
 		setDrawResultOrStep(false);
+		myDraw.setDrawTry(false);
 	}
 
 	private void actionDrawLine() {
 		myDraw.setDraw(2);
 		setDrawResultOrStep(false);
+		myDraw.setDrawTry(false);
 	}
 
 	private void actionOpen() {
-		JFileChooser fc = new JFileChooser(new File("D:\\OneDrive - Hanoi University of Science and Technology\\HUY\\CODE\\JAVA\\OOP\\BTL-final\\src\\demo"));
+		File file = new File("");
+        String currentDirectory = file.getAbsolutePath() + "\\src\\demo";
+		JFileChooser fc = new JFileChooser(new File(currentDirectory));
 		fc.setDialogTitle("Open graph");
 		int select = fc.showOpenDialog(this);
 		if (select == 0) {
 			String path = fc.getSelectedFile().toString();
-			System.out.println(path);
 			myDraw.readFile(path);
 			textLog.setText("Done read.");
 			actionUpdate();
@@ -402,13 +429,26 @@ public class MyFrame extends JFrame implements ActionListener {
 	}
 
 	private void actionSave() {
-		JFileChooser fc = new JFileChooser();
+		File file = new File("");
+        String currentDirectory = file.getAbsolutePath() + "\\src\\save";
+		JFileChooser fc = new JFileChooser(new File(currentDirectory));
 		fc.setDialogTitle("Save graph");
 		int select = fc.showSaveDialog(this);
+		Toolkit tool = Toolkit.getDefaultToolkit();
+        Dimension ScreenSize = tool.getScreenSize();
 		if (select == 0) {
-			String path = fc.getSelectedFile().getPath();
+			String path = fc.getSelectedFile().getPath() + ".png";
 			System.out.println(path);
-			myDraw.write(path);
+			try {
+	            Robot robot = new Robot();
+	            Rectangle capture = new Rectangle((WIDTH_SELECT+65), 50, (ScreenSize.width-WIDTH_SELECT-65), (ScreenSize.height-230));
+	            BufferedImage Image = robot.createScreenCapture(capture);
+	            ImageIO.write(Image, "jpg", new File(path));
+	        }
+	        catch (Exception ex) {
+	            System.out.println(ex);
+	        }
+
 		}
 	}
 
@@ -427,6 +467,7 @@ public class MyFrame extends JFrame implements ActionListener {
 	}
 
 	private void actionChoosePoint() {
+		myDraw.setDrawTry(false);
 		resetDataDijkstra();
 		setDrawResultOrStep(false);
 		reDraw();
@@ -692,55 +733,11 @@ public class MyFrame extends JFrame implements ActionListener {
 	private void drawDemo() {
 		Random rd = new Random();
 		int demo = rd.nextInt(5);
-		if (demo < 1 || demo > 5)
+		if (demo < 1 || demo > 4)
 			demo = 1;
 		myDraw.readDemo(demo);
 		actionUpdate();
 	}
-
-	private void processInputMatrix() {
-		int numberPoint = 0;
-		boolean isSuccess = true;
-		try {
-			numberPoint = Integer.parseInt(textNumerPoint.getText());
-			int a[][] = new int[numberPoint][numberPoint];
-			String temp = textMatrix.getText();
-			Scanner scan = new Scanner(temp);
-			for (int i = 0; i < numberPoint; i++) {
-				for (int j = 0; j < numberPoint; j++) {
-					try {
-						a[i][j] = scan.nextInt();
-					} catch (InputMismatchException e) {
-						JOptionPane.showMessageDialog(null, "Enter your matrix!");
-						isSuccess = false;
-						break;
-					}
-				}
-				if (!isSuccess) {
-					break;
-				}
-			}
-
-			for (int i = 0; i < numberPoint; i++) {
-				for (int j = 0; j < numberPoint; j++) {
-					System.out.printf("%3d", a[i][j]);
-				}
-				System.out.println();
-			}
-
-			scan.close();
-
-			myDraw.setA(a);
-			myDraw.convertMatrixToData();
-			myDraw.repaint();
-			dijkstra.setA(a);
-
-		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(null, "Enter one integer number < 30!");
-		}
-
-	}
-
 	private boolean checkRun() {
 		int size = myDraw.getData().getArrMyPoint().size() - 1;
 		indexBeginPoint = cbbBeginPoint.getSelectedIndex();
@@ -750,6 +747,18 @@ public class MyFrame extends JFrame implements ActionListener {
 		}
 
 		if (size < 1 || indexBeginPoint == 0 || indexEndPoint == 0) {
+			JOptionPane.showMessageDialog(null, "Error chose points or don't Update graph to chose points", "Error",
+					JOptionPane.WARNING_MESSAGE);
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean checkRunAlgo() {
+		int size = myDraw.getData().getArrMyPoint().size() - 1;
+		indexBeginPoint = cbbBeginPoint.getSelectedIndex();
+
+		if (size < 1 || indexBeginPoint == 0) {
 			JOptionPane.showMessageDialog(null, "Error chose points or don't Update graph to chose points", "Error",
 					JOptionPane.WARNING_MESSAGE);
 			return false;
@@ -810,24 +819,78 @@ public class MyFrame extends JFrame implements ActionListener {
 			myDraw.repaint();
 		}
 	}
-
-	private void runStep() {
-		if (checkRun()) {
-			setBeginEndPoint();
-			dijkstra.dijkstraStep(++step);
-			loadLog(true);
-			textLog.setText(dijkstra.tracePathStep());
-
-			myDraw.setDrawStep(true);
-			myDraw.setDrawResult(false);
+	
+	private void runDfs() {
+		if (checkRunAlgo()) {
+			algo.setMapType(mapType);
+			algo.setArrMyPoint(myDraw.getData().getArrMyPoint());
+			algo.setArrMyLine(myDraw.getData().getArrMyLine());
+			myDraw.setIndexBeginPoint(indexBeginPoint);
+			myDraw.setIndexEndPoint(indexEndPoint);
+			algo.setBeginPoint(indexBeginPoint);
+			algo.input();
+			algo.DFS();
+			
+//			int [] a = algo.getP();
+//			for (int i = 0; i < a.length; i++) {
+//				System.out.print(a[i] + " ");
+//			}
+		}
+	}
+	
+	private void runBfs() {
+		if (checkRunAlgo()) {
+			resetDataDijkstra();
+			setDrawResultOrStep(false);
 			myDraw.setDrawTry(false);
-			myDraw.setA(dijkstra.getA());
-			myDraw.setP(dijkstra.getP());
-			myDraw.setArrPointResultStep(dijkstra.getArrPointResultStep());
-			myDraw.setLen(dijkstra.getLen());
-			myDraw.setCheckedPointMin(dijkstra.getCheckedPointMin());
-			myDraw.setInfinity(dijkstra.getInfinity());
-			myDraw.repaint();
+			reDraw();
+			loadMatrix();
+			clearLog();
+			algo.setMapType(mapType);
+			algo.setArrMyPoint(myDraw.getData().getArrMyPoint());
+			algo.setArrMyLine(myDraw.getData().getArrMyLine());
+			myDraw.setIndexBeginPoint(indexBeginPoint);
+			myDraw.setIndexEndPoint(indexEndPoint);
+			algo.setBeginPoint(indexBeginPoint);
+			algo.input();
+			algo.BFS();
+			updateTrace = new ArrayList<Integer>();
+			JFrame mainFrame;
+			JPanel controlPanel = new JPanel();
+	        controlPanel.setLayout(new FlowLayout());
+			mainFrame = new JFrame("BFS");
+	        mainFrame.setSize(300, 100);
+	        mainFrame.setLayout(new GridLayout(1, 1));
+			maxsize = algo.getMaxsize();
+			index = 0;
+	        JButton btnNext = new JButton("Next");
+	        btnNext.addActionListener(new ActionListener() {
+	            public void actionPerformed(ActionEvent e) {
+	                if (index < maxsize) {
+	    				myDraw.setDrawStep(true);
+	    				myDraw.setDrawResult(false);
+	    				myDraw.setDrawTry(false);
+	    				myDraw.setA(algo.getA());
+	    				myDraw.setDad(algo.getDad());
+	    				int arr[] = algo.getP(index);
+	    				myDraw.setP(arr);
+	    				for (int i = 0; i < arr.length; i++)
+	    					updateTrace.add(arr[i]);
+	    				myDraw.setTrace(updateTrace);
+	    				myDraw.repaint();
+	    				index++;
+	                } else {
+	                	myDraw.setDrawStep(false);
+	    				myDraw.setDrawResult(false);
+	    				myDraw.setDrawTry(false);
+	                	mainFrame.setVisible(false);
+	                	JOptionPane.showMessageDialog(null, "Done BFS", "Log", JOptionPane.INFORMATION_MESSAGE);
+	                }
+	            }
+	        });
+	        controlPanel.add(btnNext);
+	        mainFrame.add(controlPanel);
+	        mainFrame.setVisible(true);
 		}
 	}
 	
@@ -863,14 +926,14 @@ public class MyFrame extends JFrame implements ActionListener {
 
 	private void showHelp() {
 		if (frameHelp == null) {
-			frameHelp = new HelpAndAbout(0, "Dijkstra - Help");
+			frameHelp = new HelpAndAbout(0, "Help");
 		}
 		frameHelp.setVisible(true);
 	}
 
 	private void showAbout() {
 		if (frameAbout == null) {
-			frameAbout = new HelpAndAbout(1, "Dijkstra - About");
+			frameAbout = new HelpAndAbout(1, "About");
 		}
 		frameAbout.setVisible(true);
 	}
@@ -939,23 +1002,22 @@ public class MyFrame extends JFrame implements ActionListener {
 		}
 		
 		// select run
-		if (e.getSource() == btnRunStep) {
-			runStep();
-		}
 
 		if (e.getSource() == btnRunAll) {
 			runAll();
 		}
 		
+		if (e.getSource() == btnDfs) {
+			runDfs();
+		}
+		
+		if (e.getSource() == btnBfs) {
+			runBfs();
+		}
+		
 		if (e.getSource() == btnRunTry) {
 			runTry();
 		}
-
-		// input matrix
-		if (command == "Ok") {
-			processInputMatrix();
-		}
-
 		// select menu bar
 		if (command == "New") {
 			actionNew();

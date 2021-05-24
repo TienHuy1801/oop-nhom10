@@ -9,10 +9,12 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -26,6 +28,8 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	private int len[];
 	private int a[][];
 	private int p[];
+	private ArrayList<Integer> trace;
+	private int dad[];
 	private int infinity;
 	private int x = 0, y = 0, r = 15, r2 = 2 * r; // ban kinh, duong kinh
 	private int indexPointBeginLine, indexPointEndLine, indexTemp;
@@ -52,12 +56,22 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	private Point centerPoint;
 	private int R;
 
+	//init
 	public MyDraw() {
 		init();
 		addMouseMotionListener(this);
 		addMouseListener(this);
 	}
 
+	public void init() {
+		data.getArrMyLine().clear();
+		data.getArrMyPoint().clear();
+		MyPoint p0 = new MyPoint(new Ellipse2D.Float(50, 50, 50, 50));
+		data.getArrMyPoint().add(p0);
+		data.getArrMyLine().add(new MyLine(creatLine(p0.getP(), p0.getP()), 0, 0, -1));
+	}
+
+	//main draw
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		setBackground(colorBackGround);
@@ -119,7 +133,8 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	@Override
-	public void mousePressed(MouseEvent e) { // nhan vao
+	//on click
+	public void mousePressed(MouseEvent e) { 
 		pointBeginLine = e.getPoint();
 		point = e.getPoint();
 		e.getPoint();
@@ -129,7 +144,8 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	@Override
-	public void mouseReleased(MouseEvent e) { // nha ra
+	//out click
+	public void mouseReleased(MouseEvent e) { 
 		boolean drawAgaine = false;
 		if (checkDrawLine) {
 			indexPointEndLine = indexPointContain(new Point(e.getX(), e.getY()));
@@ -169,22 +185,22 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 		}
 		data.getArrMyLine().get(indexTemp).setIndexPointA(data.getArrMyLine().get(indexTemp).getIndexPointB());
 		updateLine();
-		repaint();// xoa doan thang ko dung
-		isFindPoint = true; // cho phep tim diem dau
+		repaint();// clear wrong line
+		isFindPoint = true; // accept find first point
 	}
 
 	@Override
-	public void mouseEntered(MouseEvent e) { // vao frame
+	public void mouseEntered(MouseEvent e) { // in frame
 		// System.out.println("Entered");
 	}
 
 	@Override
-	public void mouseExited(MouseEvent e) { // ra khoi frame
+	public void mouseExited(MouseEvent e) { // out frame
 		// System.out.println("Exited");
 	}
 
 	@Override
-	public void mouseDragged(MouseEvent e) { // keo chuot
+	public void mouseDragged(MouseEvent e) { // move mouse
 		if (isFindPoint) { // find point is true
 			indexPointBeginLine = indexPointContain(pointBeginLine);
 			if (indexPointBeginLine > 0) {
@@ -267,7 +283,7 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 			while (!ok) {
 				try {
 					c = JOptionPane.showInputDialog(null,
-							"Input Cost from " + indexPointBeginLine + " to " + indexPointEndLine, "Dijstra Graphics",
+							"Input Cost from " + indexPointBeginLine + " to " + indexPointEndLine, "Change cost",
 							1);
 					cost = Integer.parseInt(c);
 					if (cost > 0) {
@@ -340,20 +356,14 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 		data.getArrMyPoint().remove(indexPoint);
 	}
 
-	public void init() {
-		data.getArrMyLine().clear();
-		data.getArrMyPoint().clear();
-		MyPoint p0 = new MyPoint(new Ellipse2D.Float(50, 50, 50, 50));
-		data.getArrMyPoint().add(p0);
-		data.getArrMyLine().add(new MyLine(creatLine(p0.getP(), p0.getP()), 0, 0, -1));
-	}
-
+	//create line
 	private Line2D.Double creatLine(Point p1, Point p2) {
 		Line2D.Double l = new Line2D.Double(p1.x, p1.y, p2.x, p2.y);
 		return l;
 	}
-
-	private void updateLine() { // update location line after move point
+	
+	// update location line after move point
+	private void updateLine() { 
 		for (int i = 0; i < data.getArrMyLine().size(); i++) {
 			data.getArrMyLine().get(i)
 					.setL(creatLine(data.getArrMyPoint().get(data.getArrMyLine().get(i).getIndexPointA()).getP(),
@@ -449,99 +459,55 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	}
 
 	private void drawResultStep(Graphics2D g2d) {
-		String cost;
-		// draw update cost
-		for (int i = 0; i < arrPointResultStep.size(); i++) {
-			if ((indexEndPoint != -1 && !checkedPointMin[indexEndPoint]) || indexEndPoint == -1) {
-				for (int j = 1; j < data.getArrMyPoint().size(); j++) {
-					cost = String.valueOf(len[j]);
-					if (p[j] > 0 && a[p[j]][j] < infinity && a[arrPointResultStep.get(i)][j] < infinity
-							&& !checkedPointMin[j]) {
-
-						MyLine ml = new MyLine(
-								creatLine(data.getArrMyPoint().get(p[j]).getP(), data.getArrMyPoint().get(j).getP()),
-								p[j], j, a[arrPointResultStep.get(i)][j]);
-
-						ml.drawLine(g2d, data.getArrMyPoint().get(arrPointResultStep.get(i)).getP(),
-								data.getArrMyPoint().get(j).getP(), colorCost, colorStep, sizeLine, typeMap);
-
-						data.getArrMyPoint().get(j).drawResult(g2d, j, colorStep, colorIndex, cost, colorStep);
-					}
-				}
-
-			}
-
-			// draw line min len
-			if (p[arrPointResultStep.get(i)] > 0) {
-				cost = String.valueOf(len[arrPointResultStep.get(i)]);
-				MyLine ml = new MyLine(
-						creatLine(data.getArrMyPoint().get(p[arrPointResultStep.get(i)]).getP(),
-								data.getArrMyPoint().get(arrPointResultStep.get(i)).getP()),
-						p[arrPointResultStep.get(i)], i, a[p[arrPointResultStep.get(i)]][arrPointResultStep.get(i)]);
-
-				ml.drawLine(g2d, data.getArrMyPoint().get(p[arrPointResultStep.get(i)]).getP(),
-						data.getArrMyPoint().get(arrPointResultStep.get(i)).getP(), colorStepMin, colorStepMin,
-						sizeLine, typeMap);
-
-			}
-
-		}
-
-		// draw point cost is min
-		for (int i = 0; i < arrPointResultStep.size(); i++) {
-			if (p[arrPointResultStep.get(i)] < infinity) {
-				cost = String.valueOf(len[arrPointResultStep.get(i)]);
-				data.getArrMyPoint().get(arrPointResultStep.get(i)).drawResult(g2d, arrPointResultStep.get(i),
-						colorStepMin, colorIndex, cost, colorStepMin);
+		int size = p.length;
+		for (int i = 0; i < size; i++) {
+			int u = p[i];
+			while (dad[u] != 0) {
+				MyLine ml = new MyLine(creatLine(data.getArrMyPoint().get(u).getP(), data.getArrMyPoint().get(dad[u]).getP()), u, dad[u], a[u][dad[u]]);
+				ml.drawLine(g2d, data.getArrMyPoint().get(u).getP(), data.getArrMyPoint().get(dad[u]).getP(), colorCost, colorResult, sizeLineResult, typeMap);
+				data.getArrMyPoint().get(dad[u]).drawResult(g2d, dad[u], colorResult, colorIndex, "", colorResult);
+				u = dad[u];
 			}
 		}
-
-		// draw result
-		if (indexEndPoint != -1 && checkedPointMin[indexEndPoint]) {
-			int i = indexEndPoint;
-			while (i != indexBeginPoint) {
-				cost = String.valueOf(len[i]);
-				MyLine ml = new MyLine(
-						creatLine(data.getArrMyPoint().get(i).getP(), data.getArrMyPoint().get(p[i]).getP()), i, p[i],
-						a[p[i]][i]);
-
-				ml.drawLine(g2d, data.getArrMyPoint().get(p[i]).getP(), data.getArrMyPoint().get(i).getP(), colorCost,
-						colorResult, sizeLineResult, typeMap);
-
-				data.getArrMyPoint().get(i).drawResult(g2d, i, colorResult, colorIndex, cost, colorResult);
-
-				i = p[i];
+		for (int i : trace) {
+			int u = i;
+			while (dad[u] != 0) {
+				MyLine ml = new MyLine(creatLine(data.getArrMyPoint().get(u).getP(), data.getArrMyPoint().get(dad[u]).getP()), u, dad[u], a[u][dad[u]]);
+				ml.drawLine(g2d, data.getArrMyPoint().get(u).getP(), data.getArrMyPoint().get(dad[u]).getP(), colorCost, colorResult, sizeLineResult, typeMap);
+				data.getArrMyPoint().get(dad[u]).drawResult(g2d, dad[u], colorResult, colorIndex, "", colorResult);
+				u = dad[u];
 			}
-			cost = String.valueOf(len[i]);
-			data.getArrMyPoint().get(indexBeginPoint).drawResult(g2d, indexBeginPoint, colorResult, colorIndex, cost,
-					colorResult);
+			data.getArrMyPoint().get(i).drawResult(g2d, i, colorResult, colorIndex, "", colorResult);
 		}
 	}
 
-	public void write(String path) {
-		try {
-			// String path = JOptionPane.showInputDialog(null, "File name ",
-			// "Save Graphics", 1);
-			path += ".dij";
-			FileOutputStream f = new FileOutputStream(path);
-			ObjectOutputStream oStream = new ObjectOutputStream(f);
-			oStream.writeObject(data);
-			oStream.close();
-			JOptionPane.showMessageDialog(null, "Save success", "Save success", JOptionPane.INFORMATION_MESSAGE);
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "Save", "Error save file", JOptionPane.OK_OPTION);
-			System.out.println("Error save file\n" + e.toString());
+	//create circle graph
+	public void createGraph(int numberPoint) {
+		centerPoint = new Point(getWidth() / 2, getHeight() / 2);
+		init();
+		R = (centerPoint.x > centerPoint.y) ? centerPoint.y : centerPoint.x;
+		R = R * 4 / 5;
+		for (int i = 1; i <= numberPoint; i++) {
+			double phi = -90 + 360.0 * i / numberPoint;
+			phi = phi * Math.PI / 180;
+			int x = centerPoint.x + (int) (R * Math.cos(phi));
+			int y = centerPoint.y + (int) (R * Math.sin(phi));
+
+			data.getArrMyPoint().add(new MyPoint(new Ellipse2D.Float(x, y, r2, r2)));
 		}
 	}
 
+	//open demo (random)
 	public void readDemo(int demo) {
 		drawResult = false;
 		drawStep = false;
 		drawTry = false;
+		File file = new File("");
+        String currentDirectory = file.getAbsolutePath() + "\\src\\demo\\input" + demo + ".txt";
 		FileInputStream fi;
 		if (demo > 0)
 		try {
-			fi = new FileInputStream("D:\\OneDrive - Hanoi University of Science and Technology\\HUY\\CODE\\JAVA\\OOP\\BTL-final\\src\\demo\\input" + 2 + ".txt");
+			fi = new FileInputStream(currentDirectory);
 			@SuppressWarnings("resource")
 			Scanner scanner = new Scanner(fi);
         	String input;
@@ -567,64 +533,9 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.ERROR_MESSAGE);
 		}
-//		MyData data = null;
-//		if (demo > 0) {
-//			try {
-//				InputStream f = getClass().getResourceAsStream("D:\\OneDrive - Hanoi University of Science and Technology\\HUY\\CODE\\JAVA\\OOP\\BTL-final\\src\\demo\\demo" + demo + ".dat");
-//				ObjectInputStream inStream = new ObjectInputStream(f);
-//				data = (MyData) inStream.readObject();
-//				inStream.close();
-//				this.data = data;
-//				repaint();
-//			} catch (ClassNotFoundException e) {
-//				JOptionPane.showMessageDialog(null, "Error read demo in class", "Error", JOptionPane.ERROR_MESSAGE);
-//			} catch (IOException e) {
-//				JOptionPane.showMessageDialog(null, "Error read demo file", "Error", JOptionPane.ERROR_MESSAGE);
-//			}
-//		}
-	}
+	}	
 
-	public void convertMatrixToData() {
-		int anpha = 360 / a.length;
-		int height = this.getHeight();
-		int width = this.getWidth();
-		Point pointI = new Point(height / 2, width / 2);
-
-		init();
-
-		for (int i = 0; i < a.length; i++) {
-			int x = (int) (pointI.x + Math.cos(anpha * i));
-			int y = (int) (pointI.y + Math.sin(anpha));
-			data.getArrMyPoint().add(new MyPoint(new Ellipse2D.Float(x, y, r2, r2)));
-		}
-		for (int i = 0; i < a.length; i++) {
-			for (int j = 0; j < a.length; j++) {
-				if (a[i][j] > 0) {
-					data.getArrMyLine().add(new MyLine(
-							creatLine(data.getArrMyPoint().get(i + 1).getP(), data.getArrMyPoint().get(j + 1).getP()),
-							i + 1, j + 1, a[i][j]));
-				}
-			}
-		}
-	}
-	
-
-	public void createGraph(int numberPoint) {
-		centerPoint = new Point(getWidth() / 2, getHeight() / 2);
-		init();
-		R = (centerPoint.x > centerPoint.y) ? centerPoint.y : centerPoint.x;
-		R = R * 4 / 5;
-		for (int i = 1; i <= numberPoint; i++) {
-			double phi = -90 + 360.0 * i / numberPoint;
-			phi = phi * Math.PI / 180;
-			int x = centerPoint.x + (int) (R * Math.cos(phi));
-			int y = centerPoint.y + (int) (R * Math.sin(phi));
-
-			data.getArrMyPoint().add(new MyPoint(new Ellipse2D.Float(x, y, r2, r2)));
-		}
-	}
-
-
+	//open file
 	public void readFile(String path) {
 		drawResult = false;
 		drawStep = false;
@@ -657,14 +568,6 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.ERROR_MESSAGE);
 		}
-//		catch (FileNotFoundException e) {
-//			JOptionPane.showMessageDialog(null, "File not found", "Error", JOptionPane.ERROR_MESSAGE);
-//		} catch (IOException e) {
-//			JOptionPane.showMessageDialog(null, "Error read file\nFile open must is *.dij", "Error",
-//					JOptionPane.ERROR_MESSAGE);
-//		} catch (ClassNotFoundException e) {
-//			JOptionPane.showMessageDialog(null, "Error read class", "Error", JOptionPane.ERROR_MESSAGE);
-//		}
 	}
 
 	public int getDrawWith() {
@@ -821,5 +724,20 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 	public void setCount(int count) {
 		this.count = count;
 	}
-	
+
+	public int[] getDad() {
+		return dad;
+	}
+
+	public void setDad(int[] dad) {
+		this.dad = dad;
+	}
+
+	public ArrayList<Integer> getTrace() {
+		return trace;
+	}
+
+	public void setTrace(ArrayList<Integer> trace) {
+		this.trace = trace;
+	}
 }
