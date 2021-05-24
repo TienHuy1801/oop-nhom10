@@ -871,8 +871,13 @@ public class MyFrame extends JFrame implements ActionListener {
 	    				myDraw.setDrawResult(false);
 	    				myDraw.setDrawTry(false);
 	    				myDraw.setA(algo.getA());
-	    				myDraw.setDad(algo.getDad());
+	    				int dad[] = algo.getDad();
+	    				myDraw.setDad(dad);
 	    				int arr[] = algo.getP(index);
+	    				String text = "Step " + (index + 1) +": ";
+	    				if (index != 0) for (int i = 0; i < arr.length; i++) text += Integer.toString(dad[arr[i]]) + "->" + Integer.toString(arr[i]) + " ";
+	    				else for (int i = 0; i < arr.length; i++) text += Integer.toString(arr[i]) + " ";
+	    				textLog.setText(text);
 	    				myDraw.setP(arr);
 	    				for (int i = 0; i < arr.length; i++)
 	    					updateTrace.add(arr[i]);

@@ -477,6 +477,8 @@ class MyDraw extends JPanel implements MouseListener, MouseMotionListener {
 				data.getArrMyPoint().get(dad[u]).drawResult(g2d, dad[u], colorResult, colorIndex, "", colorResult);
 				u = dad[u];
 			}
+		}
+		for (int i : trace) {
 			data.getArrMyPoint().get(i).drawResult(g2d, i, colorResult, colorIndex, "", colorResult);
 		}
 	}
